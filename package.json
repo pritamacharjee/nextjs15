@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
+    "dev2":  "next dev --https --ssl-cert ./ssl/cert.pem --ssl-key ./ssl/key.pem", 
     "build": "next build --turbopack",
     "start": "next start"
   },
