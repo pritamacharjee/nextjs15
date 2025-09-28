@@ -1,0 +1,44 @@
+services:
+  traefik:
+    image: traefik:v2.9
+    command:
+      - "--api.insecure=true"                         # Traefik dashboard
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.docker=true"
+    ports:
+      - "80:80"                                       # HTTP
+      - "443:443"                                     # HTTPS
+      - "8080:8080"                                   # Dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./ssl:/ssl"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./ssl:/ssl                                   # Mount your custom SSL folder
+    environment:
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+      - CHOKIDAR_USEPOLLING=true  
+      - CHOKIDAR_INTERVAL=100
+      - WATCHPACK_POLLING=true
+    command: npm run dev
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextjs.rule=Host(`myapp.localhost`)"
+      - "traefik.http.routers.nextjs.entrypoints=web,websecure"
+      - "traefik.http.routers.nextjs.tls=true"
+      - "traefik.http.services.nextjs.loadbalancer.server.port=3000"
+
+      
+      # - "traefik.http.routers.nextjs.tls.certificates[0].certFile=/ssl/cert.pem"
+      # - "traefik.http.routers.nextjs.tls.certificates[0].keyFile=/ssl/key.pem"
+      # - "traefik.http.middlewares.nextjs-headers.headers.customrequestheaders.Host=myapp.localhost"
+      # - "traefik.http.routers.nextjs.middlewares=nextjs-headers"
